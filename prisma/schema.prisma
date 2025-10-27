@@ -1,0 +1,101 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum NoteType {
+  CORE
+  INTERMEDIATE
+  ADVANCED
+  PERIPHERAL
+  MISC
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books     Book[]
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chapters    Chapter[]
+}
+
+model Chapter {
+  id          String   @id @default(cuid())
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id])
+  order       Int      @default(0)
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subchapters Subchapter[]
+}
+
+model Subchapter {
+  id          String   @id @default(cuid())
+  chapterId   String
+  chapter     Chapter  @relation(fields: [chapterId], references: [id])
+  order       Int      @default(0)
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  notes       Note[]
+  mcqs        MCQQuestion[]
+}
+
+model Note {
+  id           String      @id @default(cuid())
+  subchapterId String
+  subchapter   Subchapter  @relation(fields: [subchapterId], references: [id])
+  type         NoteType
+  title        String?
+  content      String?
+  blocksJson   Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model MCQQuestion {
+  id           String      @id @default(cuid())
+  subchapterId String
+  subchapter   Subchapter  @relation(fields: [subchapterId], references: [id])
+  prompt       String
+  explanation  String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  choices      MCQChoice[]
+}
+
+model MCQChoice {
+  id          String      @id @default(cuid())
+  questionId  String
+  question    MCQQuestion @relation(fields: [questionId], references: [id])
+  label       String
+  text        String
+  isCorrect   Boolean     @default(false)
+  explanation String?
+}

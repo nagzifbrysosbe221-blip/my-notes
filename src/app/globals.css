@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Optional: system dark-mode support without custom at-rules */
+:root { color-scheme: light dark; }
+html.dark { color-scheme: dark; }
+
+/* Base tweaks (safe, no custom at-rules) */
+* { box-sizing: border-box; }

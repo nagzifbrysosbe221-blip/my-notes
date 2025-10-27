@@ -1,0 +1,23 @@
+// prisma.config.ts
+import { defineConfig, loadEnv, env } from "@prisma/config"
+
+// Ensure .env is loaded when using a Prisma config file
+loadEnv({ envFile: ".env" })
+
+export default defineConfig({
+  // Path to your Prisma schema
+  schema: "./prisma/schema.prisma",
+
+  // Where to store migrations
+  migrations: {
+    path: "./prisma/migrations",
+  },
+
+  // Engine selection (keep "classic" if you prefer; otherwise remove this line to use the default)
+  engine: "classic",
+
+  // Datasource URL pulled from .env
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+})
