@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import { useState } from "react";
 
 type Subchapter = { id: string; title?: string | null };
@@ -40,7 +40,12 @@ export default function SubItem({
   if (!editing) {
     return (
       <div className="flex items-center justify-between rounded-md border p-3">
-        <span>{subchapter.title ?? `Subchapter ${index + 1}`}</span>
+        <Link
+          href={`/subchapters/${subchapter.id}`}
+          className="font-medium hover:underline"
+        >
+          {subchapter.title ?? `Subchapter ${index + 1}`}
+        </Link>
         <button
           className="rounded-md border px-2 py-1 text-sm"
           onClick={() => setEditing(true)}
