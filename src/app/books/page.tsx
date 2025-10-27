@@ -6,7 +6,7 @@ import NewBook from "./_new-book";
 
 export default async function BooksPage() {
   const session = await auth();
-  const userId = (session as any)?.userId;
+  const userId = session?.user?.id;
 
   const books = await prisma.book.findMany({
     where: userId ? { ownerId: userId } : undefined,

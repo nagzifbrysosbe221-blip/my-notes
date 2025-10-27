@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 // List books for the signed-in user
 export async function GET() {
   const session = await auth();
-  const userId = (session as any)?.userId || null;
+  const userId = session?.user?.id ?? null;
 
   const books = await prisma.book.findMany({
     where: userId ? { ownerId: userId } : undefined, // if your model requires ownerId, userId will always exist here
@@ -17,7 +17,7 @@ export async function GET() {
 // Create a new book owned by the signed-in user
 export async function POST(req: Request) {
   const session = await auth();
-  const userId = (session as any)?.userId;
+  const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
   const { title } = await req.json();

@@ -10,7 +10,7 @@ export default async function BookDetail({
 }) {
   const { bookId } = await params; // ← unwrap the Promise
   const session = await auth();
-  const userId = (session as any)?.userId;
+  const userId = session?.user?.id;
 
   const book = await prisma.book.findFirst({
     where: { id: bookId, ...(userId ? { ownerId: userId } : {}) },

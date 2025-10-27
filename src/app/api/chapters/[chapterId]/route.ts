@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   const { chapterId } = await ctx.params;       // ← unwrap it
   const session = await auth();
-  const userId = (session as any)?.userId;
+  const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
   const { title } = await req.json();
