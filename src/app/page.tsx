@@ -26,9 +26,9 @@ export default async function Dashboard() {
             <Link href="/books" className="rounded-md border px-3 py-2">
               Go to Books
             </Link>
-            <a href="/api/auth/signout" className="rounded-md border px-3 py-2">
+            <Link href="/api/auth/signout" className="rounded-md border px-3 py-2">
               Sign out (dev)
-            </a>
+            </Link>
           </div>
 
           <pre className="rounded-md border p-4 overflow-auto">

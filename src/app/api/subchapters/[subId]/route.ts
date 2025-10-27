@@ -1,0 +1,38 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function PATCH(
+  req: Request,
+  ctx: { params: Promise<{ subId: string }> }
+) {
+  const { subId } = await ctx.params;
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return new Response("Unauthorized", { status: 401 });
+
+  const { title } = await req.json();
+  const safeTitle = typeof title === "string" ? title.trim() : "";
+  if (!safeTitle) return new Response("Valid title is required", { status: 400 });
+
+  const subchapter = await prisma.subchapter.findUnique({
+    where: { id: subId },
+    include: {
+      chapter: {
+        include: {
+          book: { select: { ownerId: true } },
+        },
+      },
+    },
+  });
+
+  if (!subchapter || subchapter.chapter.book.ownerId !== userId) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  const updated = await prisma.subchapter.update({
+    where: { id: subId },
+    data: { title: safeTitle },
+  });
+
+  return Response.json(updated);
+}

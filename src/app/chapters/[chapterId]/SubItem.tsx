@@ -1,12 +1,20 @@
 "use client";
-import Link from "next/link";
+
 import { useState } from "react";
 
-type Chapter = { id: string; title?: string | null };
+type Subchapter = { id: string; title?: string | null };
 
-export default function ChapterItem({ chapter, index }: { chapter: Chapter; index: number }) {
+export default function SubItem({
+  subchapter,
+  index,
+}: {
+  subchapter: Subchapter;
+  index: number;
+}) {
   const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(chapter.title ?? `Chapter ${index + 1}`);
+  const [title, setTitle] = useState(
+    subchapter.title ?? `Subchapter ${index + 1}`
+  );
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -14,14 +22,13 @@ export default function ChapterItem({ chapter, index }: { chapter: Chapter; inde
     if (!t) return;
     setSaving(true);
     try {
-      const r = await fetch(`/api/chapters/${chapter.id}`, {
+      const r = await fetch(`/api/subchapters/${subchapter.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: t }),
       });
       if (!r.ok) throw new Error(await r.text());
       setEditing(false);
-      // simplest reload; could use router.refresh() if page was server-rendered
       location.reload();
     } catch (e) {
       alert((e as Error).message || "Failed to rename");
@@ -33,13 +40,11 @@ export default function ChapterItem({ chapter, index }: { chapter: Chapter; inde
   if (!editing) {
     return (
       <div className="flex items-center justify-between rounded-md border p-3">
-        <Link
-          href={`/chapters/${chapter.id}`}
-          className="font-medium hover:underline"
+        <span>{subchapter.title ?? `Subchapter ${index + 1}`}</span>
+        <button
+          className="rounded-md border px-2 py-1 text-sm"
+          onClick={() => setEditing(true)}
         >
-          {chapter.title ?? `Chapter ${index + 1}`}
-        </Link>
-        <button className="rounded-md border px-2 py-1 text-sm" onClick={() => setEditing(true)}>
           Rename
         </button>
       </div>
@@ -62,7 +67,10 @@ export default function ChapterItem({ chapter, index }: { chapter: Chapter; inde
       >
         {saving ? "Saving…" : "Save"}
       </button>
-      <button className="rounded-md border px-2 py-1 text-sm" onClick={() => setEditing(false)}>
+      <button
+        className="rounded-md border px-2 py-1 text-sm"
+        onClick={() => setEditing(false)}
+      >
         Cancel
       </button>
     </div>
