@@ -8,13 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum NoteType {
-  CORE
-  INTERMEDIATE
-  ADVANCED
-  PERIPHERAL
-  MISC
-}
 
 model User {
   id        String   @id @default(cuid())
@@ -25,6 +18,17 @@ model User {
   updatedAt DateTime @updatedAt
 
   books     Book[]
+  mcqProgress MCQProgress[]
+  shortProgress ShortProgress[]
+  creativeProgress CreativeProgress[]
+}
+
+enum ConceptType {
+  CORE
+  INTERMEDIATE
+  ADVANCED
+  PERIPHERAL
+  MISC
 }
 
 model Book {
@@ -61,21 +65,9 @@ model Subchapter {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  notes       Note[]
   mcqs        MCQQuestion[]
-}
-
-model Note {
-  id           String      @id @default(cuid())
-  subchapterId String
-  subchapter   Subchapter  @relation(fields: [subchapterId], references: [id])
-  type         NoteType
-  title        String?
-  content      String?
-  blocksJson   Json?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  shorts      ShortQuestion[]
+  creatives   CreativeQuestion[]
 }
 
 model MCQQuestion {
@@ -84,10 +76,13 @@ model MCQQuestion {
   subchapter   Subchapter  @relation(fields: [subchapterId], references: [id])
   prompt       String
   explanation  String?
+  conceptType  ConceptType @default(CORE)
+  concepts     Json?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   choices      MCQChoice[]
+  progress     MCQProgress[]
 }
 
 model MCQChoice {
@@ -98,4 +93,74 @@ model MCQChoice {
   text        String
   isCorrect   Boolean     @default(false)
   explanation String?
+}
+
+model MCQProgress {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  questionId     String
+  question       MCQQuestion @relation(fields: [questionId], references: [id])
+  seenCount      Int         @default(0)
+  correctCount   Int         @default(0)
+  lastReviewedAt DateTime?
+  isLearned      Boolean     @default(false)
+
+  @@unique([userId, questionId])
+}
+
+model ShortQuestion {
+  id           String      @id @default(cuid())
+  subchapterId String
+  subchapter   Subchapter  @relation(fields: [subchapterId], references: [id])
+  prompt       String
+  answer       String
+  conceptType  ConceptType @default(CORE)
+  concepts     Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  progress     ShortProgress[]
+}
+
+model ShortProgress {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  questionId     String
+  question       ShortQuestion @relation(fields: [questionId], references: [id])
+  seenCount      Int           @default(0)
+  correctCount   Int           @default(0)
+  lastReviewedAt DateTime?
+  isLearned      Boolean       @default(false)
+
+  @@unique([userId, questionId])
+}
+
+model CreativeQuestion {
+  id           String      @id @default(cuid())
+  subchapterId String
+  subchapter   Subchapter  @relation(fields: [subchapterId], references: [id])
+  prompt       String
+  answer       String
+  conceptType  ConceptType @default(CORE)
+  concepts     Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  progress     CreativeProgress[]
+}
+
+model CreativeProgress {
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id])
+  questionId     String
+  question       CreativeQuestion  @relation(fields: [questionId], references: [id])
+  seenCount      Int               @default(0)
+  correctCount   Int               @default(0)
+  lastReviewedAt DateTime?
+  isLearned      Boolean           @default(false)
+
+  @@unique([userId, questionId])
 }

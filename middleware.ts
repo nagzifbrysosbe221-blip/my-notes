@@ -1,8 +1,10 @@
 // middleware.ts
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 
-export default auth((req) => {
+export default auth((req: NextRequest & { auth: Session | null }) => {
   const { pathname } = req.nextUrl;
 
   // Public paths

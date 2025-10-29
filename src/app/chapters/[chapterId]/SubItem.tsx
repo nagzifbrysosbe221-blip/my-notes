@@ -16,6 +16,7 @@ export default function SubItem({
     subchapter.title ?? `Subchapter ${index + 1}`
   );
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const save = async () => {
     const t = title.trim();
@@ -46,12 +47,37 @@ export default function SubItem({
         >
           {subchapter.title ?? `Subchapter ${index + 1}`}
         </Link>
-        <button
-          className="rounded-md border px-2 py-1 text-sm"
-          onClick={() => setEditing(true)}
-        >
-          Rename
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="rounded-md border px-2 py-1 text-sm"
+            onClick={() => setEditing(true)}
+          >
+            Rename
+          </button>
+          <button
+            className="rounded-md border px-2 py-1 text-sm disabled:opacity-60"
+            onClick={async () => {
+              if (!confirm("Delete this subchapter? This cannot be undone."))
+                return;
+              setDeleting(true);
+              try {
+                const r = await fetch(`/api/subchapters/${subchapter.id}`, {
+                  method: "DELETE",
+                });
+                if (!r.ok) throw new Error(await r.text());
+                location.reload();
+              } catch (e) {
+                alert((e as Error).message || "Failed to delete");
+              } finally {
+                setDeleting(false);
+              }
+            }}
+            disabled={deleting}
+            aria-disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
       </div>
     );
   }

@@ -20,19 +20,13 @@ async function main() {
     data: { chapterId: ch.id, title: "Intro", order: 1 },
   })
 
-  await db.note.create({
-    data: {
-      subchapterId: sub.id,
-      type: "CORE",
-      title: "What is X?",
-      content: "Foundational note.",
-    },
-  })
+  // No notes seeding; MCQs only
 
   await db.mCQQuestion.create({
     data: {
       subchapterId: sub.id,
       prompt: "Which option is correct?",
+      conceptType: "CORE",
       choices: {
         create: [
           { label: "A", text: "Alpha", isCorrect: true, explanation: "A is correct." },
