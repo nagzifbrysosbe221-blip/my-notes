@@ -19,6 +19,8 @@ Visit [http://localhost:3000](http://localhost:3000) to sign in with the develop
 - CRUD flows for books and chapters with ownership enforcement.
 - Chapter detail view listing subchapters with inline rename controls.
 - API routes to create and rename subchapters that validate the signed-in owner.
+- Subchapter detail view with tabs scaffold (Notes/Questions).
+- Notes API: `POST /api/notes` accepts `{ subchapterId, type, contentJSON, title? }` and stores JSON blocks.
 
 ## Project Structure Highlights
 
@@ -29,7 +31,6 @@ Visit [http://localhost:3000](http://localhost:3000) to sign in with the develop
 
 ## Next Steps
 
-- Build the subchapter note editor with Tiptap.
+- Replace the placeholder textarea with a real Tiptap editor.
 - Implement MCQ, short answer, and critical thinking question flows.
 - Add SRS-style scheduling and mind-map visualizations.
-
