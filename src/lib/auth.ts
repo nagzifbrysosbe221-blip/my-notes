@@ -71,13 +71,13 @@ export const { handlers, auth, signIn, signOut } = initAuth({
    * JWT & Session callbacks: attach user id to token and session
    */
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user && "id" in user && typeof user.id === "string") {
         token.uid = user.id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (session.user && token?.uid) {
         session.user.id = token.uid;
       }
