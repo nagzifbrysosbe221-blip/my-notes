@@ -2,7 +2,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function parseCSV(input: string): string[][] {
-  // Simple CSV parser (handles quotes, commas, newlines)
+  // Parse with '|' and '@' when present; otherwise fallback to comma/newline.
+  const useCustom = input.includes("|") || input.includes("@");
+  const COL = useCustom ? '|' : ',';
+  const ROW = useCustom ? '@' : '\n';
   const rows: string[][] = [];
   let cur = "";
   let row: string[] = [];
@@ -32,13 +35,13 @@ function parseCSV(input: string): string[][] {
         i++;
         continue;
       }
-      if (ch === ',') {
+      if (ch === COL) {
         row.push(cur);
         cur = "";
         i++;
         continue;
       }
-      if (ch === '\n') {
+      if (ch === ROW) {
         row.push(cur);
         rows.push(row);
         row = [];
@@ -46,10 +49,8 @@ function parseCSV(input: string): string[][] {
         i++;
         continue;
       }
-      if (ch === '\r') {
-        i++;
-        continue;
-      }
+      if (ch === '\r') { i++; continue; }
+      // Preserve other characters (including newlines) as data
       cur += ch;
       i++;
     }

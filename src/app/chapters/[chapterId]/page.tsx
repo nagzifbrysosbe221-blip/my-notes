@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import NewSubchapter from "./_new-sub";
 import SubItem from "./SubItem";
+import SubList from "./_sub-list";
 
 export default async function ChapterDetail({
   params,
@@ -28,7 +29,7 @@ export default async function ChapterDetail({
 
   const subchapters = await prisma.subchapter.findMany({
     where: { chapterId: chapter.id },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
     select: { id: true, title: true },
   });
 
@@ -43,9 +44,8 @@ export default async function ChapterDetail({
       </div>
 
       <div className="space-y-2">
-        {subchapters.map((sub, i) => (
-          <SubItem key={sub.id} subchapter={sub} index={i} />
-        ))}
+        {/* @ts-expect-error Server Component passing data to client */}
+        <SubList chapterId={chapter.id} items={subchapters} />
       </div>
 
       {subchapters.length === 0 && (
@@ -54,3 +54,4 @@ export default async function ChapterDetail({
     </div>
   );
 }
+

@@ -15,7 +15,7 @@ const CONCEPT_TYPES = [
 ] as const;
 
 export default function ShortImport({ subId }: { subId: string }) {
-  const defaultHeader = "question,answer\n";
+  const defaultHeader = "question|answer@";
   const [csv, setCsv] = useState(defaultHeader);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function ShortImport({ subId }: { subId: string }) {
   const [result, setResult] = useState<string | null>(null);
   const [conceptType, setConceptType] = useState<typeof CONCEPT_TYPES[number]["value"] | "">("CORE");
 
-  const sample = `question,answer\nWhat is the capital of France?,Paris`;
+  const sample = `question|answer@What is the capital of France?|Paris`;
 
   const allSelected = useMemo(() => {
     if (!preview || preview.length === 0) return false;
@@ -97,7 +97,7 @@ export default function ShortImport({ subId }: { subId: string }) {
     <div className="space-y-4">
       <div className="rounded border p-3 text-sm">
         <div className="font-medium">CSV format</div>
-        <p className="text-zinc-600">Headers: question, answer</p>
+        <p className="text-zinc-600">Columns separated by <code>|</code>, rows separated by <code>@</code>. Headers: question | answer</p>
         <p className="text-zinc-600">- Concept category is selected from the dropdown and applied to all imported cards.</p>
         <div className="mt-2 rounded bg-zinc-50 p-2 text-xs">
           <pre className="whitespace-pre-wrap">{sample}</pre>
@@ -176,3 +176,4 @@ export default function ShortImport({ subId }: { subId: string }) {
     </div>
   );
 }
+

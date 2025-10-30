@@ -53,7 +53,8 @@ pnpm tsx prisma/seed.ts
 
 - CSV import POST `/api/mcqs/import`
   - Body: `{ subchapterId: string, csv: string, mode?: 'preview'|'commit', indices?: number[], conceptType: 'CORE'|'INTERMEDIATE'|'ADVANCED'|'PERIPHERAL'|'MISC' }`
-  - Expected headers: `stem, choiceA, expA, choiceB, expB, choiceC, expC, choiceD, expD, correct, explanation`
+  - Delimiters: columns separated by `|`, rows separated by `@`.
+  - Expected headers: `stem|choiceA|expA|choiceB|expB|choiceC|expC|choiceD|expD|correct|explanation@`
   - Concept category is chosen in the UI dropdown and applied to all imported cards.
   - `correct` supports A/B/C label, numeric index, or exact choice text.
 

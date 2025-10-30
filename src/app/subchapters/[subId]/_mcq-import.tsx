@@ -19,7 +19,7 @@ const CONCEPT_TYPES = [
 ] as const;
 
 export default function MCQImport({ subId }: { subId: string }) {
-  const defaultHeader = "stem,choiceA,expA,choiceB,expB,choiceC,expC,choiceD,expD,correct,explanation\n";
+  const defaultHeader = "stem|choiceA|expA|choiceB|expB|choiceC|expC|choiceD|expD|correct|explanation@";
   const [csv, setCsv] = useState(defaultHeader);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +29,7 @@ export default function MCQImport({ subId }: { subId: string }) {
   const [conceptType, setConceptType] = useState<typeof CONCEPT_TYPES[number]["value"] | "">("CORE");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
-  const sample = `stem,choiceA,expA,choiceB,expB,choiceC,expC,choiceD,expD,correct,explanation
-What is 2+2?,3,,4,Two plus two is four,5,,22,,B,Basic arithmetic.`;
+  const sample = `stem|choiceA|expA|choiceB|expB|choiceC|expC|choiceD|expD|correct|explanation@What is 2+2?|3||4|Two plus two is four|5||22||B|Basic arithmetic.`;
 
   const allSelected = useMemo(() => {
     if (!preview || preview.length === 0) return false;
@@ -104,8 +103,9 @@ What is 2+2?,3,,4,Two plus two is four,5,,22,,B,Basic arithmetic.`;
     <div className="space-y-4">
       <div className="rounded border p-3 text-sm">
         <div className="font-medium">CSV format</div>
-        <p className="text-zinc-600">Headers: stem, choiceA, expA, choiceB, expB, choiceC, expC, choiceD, expD, correct, explanation</p>
-        <p className="text-zinc-600">- correct accepts A/B/C… labels, index, or exact text.</p>
+        <p className="text-zinc-600">Columns separated by <code>|</code>, rows separated by <code>@</code>.</p>
+        <p className="text-zinc-600">Headers: stem | choiceA | expA | choiceB | expB | choiceC | expC | choiceD | expD | correct | explanation</p>
+        <p className="text-zinc-600">- correct accepts A/B/C labels, index, or exact text.</p>
         <p className="text-zinc-600">- Concept category is selected from the dropdown and applied to all imported cards.</p>
         <div className="mt-2 rounded bg-zinc-50 p-2 text-xs">
           <pre className="whitespace-pre-wrap">{sample}</pre>
@@ -128,39 +128,43 @@ What is 2+2?,3,,4,Two plus two is four,5,,22,,B,Basic arithmetic.`;
             </option>
           ))}
         </select>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-sm">View:</label>
+          <select
+            className="rounded border px-2 py-1 text-sm"
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value as any)}
+          >
+            <option value="cards">Cards</option>
+            <option value="table">Table</option>
+          </select>
+        </div>
+        <button className="rounded border px-3 py-1 text-sm disabled:opacity-60" disabled={busy || !csv.trim() || !conceptType} onClick={onPreview}>
+          {busy ? "Working..." : "Preview"}
+        </button>
+        {preview && preview.length > 0 ? (
+          <button className="rounded border px-3 py-1 text-sm disabled:opacity-60" disabled={busy} onClick={onImport}>
+            {busy ? "Importing..." : "Import Selected"}
+          </button>
+        ) : null}
+        <div className="text-sm text-green-700">{result}</div>
+        <div className="text-sm text-red-700">{error}</div>
       </div>
 
       <textarea
-        className="h-48 w-full rounded border p-2 text-sm font-mono"
+        className="h-40 w-full rounded border p-2 text-sm font-mono"
         placeholder="Paste CSV here"
         value={csv}
-        onChange={(e) => {
-          setCsv(e.target.value);
-          setPreview(null);
-          setSelected({});
-          setError(null);
-          setResult(null);
-        }}
+        onChange={(e) => setCsv(e.target.value)}
       />
 
-      {!preview ? (
-        <button className="rounded border px-3 py-1 text-sm disabled:opacity-60" disabled={busy || !csv.trim() || !conceptType} onClick={onPreview}>
-          {busy ? "Parsing…" : "Preview"}
-        </button>
-      ) : (
-        <div className="space-y-3">
+      {preview && preview.length > 0 ? (
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-zinc-600">{preview.length} item(s) parsed</div>
+            <div className="text-sm text-zinc-600">Previewing {preview.length} item(s)</div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-600">View:</label>
-              <select
-                className="rounded border px-2 py-1 text-xs"
-                value={viewMode}
-                onChange={(e) => setViewMode(e.target.value as any)}
-              >
-                <option value="cards">Cards</option>
-                <option value="table">Table</option>
-              </select>
+              <label className="text-xs text-zinc-600">Concept:</label>
+              <span className="text-xs">{CONCEPT_TYPES.find((c) => c.value === conceptType)?.label || conceptType}</span>
               <button className="rounded border px-2 py-1 text-xs" onClick={toggleAll}>{allSelected ? "Deselect all" : "Select all"}</button>
             </div>
           </div>
@@ -223,7 +227,7 @@ What is 2+2?,3,,4,Two plus two is four,5,,22,,B,Basic arithmetic.`;
                     const getCell = (label: string) => {
                       const c = item.choices.find((x) => x.label === label);
                       if (!c) return "";
-                      return `${c.text}${c.explanation ? ` — ${c.explanation}` : ""}`;
+                      return `${c.text}${c.explanation ? ` - ${c.explanation}` : ""}`;
                     };
                     const correct = item.choices.find((x) => x.isCorrect)?.label || "";
                     return (
@@ -258,10 +262,10 @@ What is 2+2?,3,,4,Two plus two is four,5,,22,,B,Basic arithmetic.`;
             disabled={busy}
             onClick={onImport}
           >
-            {busy ? "Importing…" : `Import ${Object.values(selected).filter(Boolean).length} selected`}
+            {busy ? "Importing..." : `Import ${Object.values(selected).filter(Boolean).length} selected`}
           </button>
         </div>
-      )}
+      ) : null}
 
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
       {result ? <div className="text-sm text-zinc-700">{result}</div> : null}

@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     data: {
       chapterId,
       title: safeTitle,
+      order: count, // append to end
     },
   });
 

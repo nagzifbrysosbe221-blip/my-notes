@@ -1,28 +1,31 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  const id = params.id;
+  const { id } = await params;
   const q = await prisma.creativeQuestion.findUnique({
     where: { id },
     include: { subchapter: { include: { chapter: { include: { book: { select: { ownerId: true } } } } } } },
   });
   if (!q || q.subchapter.chapter.book.ownerId !== userId) return new Response("Not found", { status: 404 });
 
-  await prisma.creativeQuestion.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.creativeProgress.deleteMany({ where: { questionId: id } }),
+    prisma.creativeQuestion.delete({ where: { id } }),
+  ]);
   return new Response(null, { status: 204 });
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  const id = params.id;
+  const { id } = await params;
   const q = await prisma.creativeQuestion.findUnique({
     where: { id },
     include: { subchapter: { include: { chapter: { include: { book: { select: { ownerId: true } } } } } } },
@@ -61,4 +64,3 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   return Response.json({ ok: true });
 }
-
