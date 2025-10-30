@@ -1,9 +1,7 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
-type NextAuthInit = (
-  config: import("next-auth").NextAuthConfig
-) => import("next-auth").NextAuthResult;
-const initAuth = NextAuth as unknown as NextAuthInit;
+// Loosen types to avoid CI type resolution issues
+const initAuth: any = NextAuth as any;
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
