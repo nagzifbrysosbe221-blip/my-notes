@@ -44,7 +44,6 @@ export default async function ChapterDetail({
       </div>
 
       <div className="space-y-2">
-        {/* @ts-expect-error Server Component passing data to client */}
         <SubList chapterId={chapter.id} items={subchapters} />
       </div>
 
