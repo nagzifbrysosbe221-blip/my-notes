@@ -1,5 +1,9 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
+type NextAuthInit = (
+  config: import("next-auth").NextAuthConfig
+) => import("next-auth").NextAuthResult;
+const initAuth = NextAuth as unknown as NextAuthInit;
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -11,7 +15,7 @@ const CredentialsSchema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
 });
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut } = initAuth({
   /**
    * v5 recommends trustHost in dev; make sure NEXTAUTH_URL is set in .env
    */
