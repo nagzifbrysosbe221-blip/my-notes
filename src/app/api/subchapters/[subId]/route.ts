@@ -62,13 +62,14 @@ export async function DELETE(
   }
 
   // Prevent deletion if there are dependent questions
-  const [mcqCount, shortCount, creativeCount] = await Promise.all([
+  const [mcqCount, shortCount, creativeCount, scenarioCount] = await Promise.all([
     prisma.mCQQuestion.count({ where: { subchapterId: subId } }),
     prisma.shortQuestion.count({ where: { subchapterId: subId } }),
     prisma.creativeQuestion.count({ where: { subchapterId: subId } }),
+    prisma.scenarioQuestion.count({ where: { subchapterId: subId } }),
   ]);
 
-  if (mcqCount + shortCount + creativeCount > 0) {
+  if (mcqCount + shortCount + creativeCount + scenarioCount > 0) {
     return new Response(
       "Cannot delete: subchapter has questions. Remove them first.",
       { status: 409 }

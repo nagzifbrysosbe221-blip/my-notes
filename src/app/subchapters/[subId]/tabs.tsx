@@ -9,14 +9,18 @@ import ShortPractice from "./_short-practice";
 import CreativeImport from "./_creative-import";
 import CreativeCards from "./_creative-cards";
 import CreativePractice from "./_creative-practice";
+import ScenarioPractice from "./_scenario-practice";
+import ScenarioImport from "./_scenario-import";
+import ScenarioCards from "./_scenario-cards";
 
-type QType = "mcq" | "short" | "creative";
+type QType = "mcq" | "short" | "creative" | "scenario";
 
 export default function Tabs({ subId }: { subId: string }) {
   const [qType, setQType] = useState<QType>("mcq");
   const [mcqTab, setMcqTab] = useState<"practice" | "import" | "view">("practice");
   const [shortTab, setShortTab] = useState<"practice" | "import" | "view">("practice");
   const [creativeTab, setCreativeTab] = useState<"practice" | "import" | "view">("practice");
+  const [scenarioTab, setScenarioTab] = useState<"practice" | "import" | "view">("practice");
 
   return (
     <div className="space-y-4">
@@ -25,6 +29,7 @@ export default function Tabs({ subId }: { subId: string }) {
           { key: "mcq", label: "MCQ" },
           { key: "short", label: "Short Answer" },
           { key: "creative", label: "Creative Thinking" },
+          { key: "scenario", label: "Scenario Question" },
         ] as const).map((t) => (
           <button
             key={t.key}
@@ -119,6 +124,36 @@ export default function Tabs({ subId }: { subId: string }) {
             <CreativeImport subId={subId} />
           ) : (
             <CreativeCards subId={subId} />
+          )}
+        </div>
+      ) : qType === "scenario" ? (
+        <div className="space-y-3">
+          <div className="flex gap-2 border-b">
+            <button
+              className={`px-3 py-2 text-sm ${scenarioTab === "practice" ? "border-b-2 border-zinc-900 font-medium" : "text-zinc-500"}`}
+              onClick={() => setScenarioTab("practice")}
+            >
+              Practice
+            </button>
+            <button
+              className={`px-3 py-2 text-sm ${scenarioTab === "import" ? "border-b-2 border-zinc-900 font-medium" : "text-zinc-500"}`}
+              onClick={() => setScenarioTab("import")}
+            >
+              Import Questions
+            </button>
+            <button
+              className={`px-3 py-2 text-sm ${scenarioTab === "view" ? "border-b-2 border-zinc-900 font-medium" : "text-zinc-500"}`}
+              onClick={() => setScenarioTab("view")}
+            >
+              View Cards
+            </button>
+          </div>
+          {scenarioTab === "practice" ? (
+            <ScenarioPractice subId={subId} />
+          ) : scenarioTab === "import" ? (
+            <ScenarioImport subId={subId} />
+          ) : (
+            <ScenarioCards subId={subId} />
           )}
         </div>
       ) : null}
