@@ -27,6 +27,7 @@ export async function GET(req: Request) {
     where,
     orderBy: { createdAt: "asc" },
     include: {
+      choices: { orderBy: { label: "asc" } },
       progress: { where: { userId }, select: { seenCount: true, correctCount: true, isLearned: true, lastReviewedAt: true } },
     },
   });
@@ -38,6 +39,14 @@ export async function GET(req: Request) {
       id: q.id,
       prompt: q.prompt,
       conceptType: q.conceptType,
+      explanation: q.explanation ?? null,
+      choices: q.choices.map((choice) => ({
+        id: choice.id,
+        label: choice.label,
+        text: choice.text,
+        isCorrect: choice.isCorrect,
+        explanation: choice.explanation ?? null,
+      })),
       stats: {
         seenCount: p?.seenCount ?? 0,
         correctCount: p?.correctCount ?? 0,
