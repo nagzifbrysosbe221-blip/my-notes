@@ -1,8 +1,8 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -14,4 +14,3 @@ export async function POST(req: Request) {
   });
   return Response.json(book, { status: 201 });
 }
-

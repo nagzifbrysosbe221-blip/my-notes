@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import NewChapter from "./_new-chapter";
 import ChapterItem from "./ChapterItem";
 
@@ -11,7 +11,7 @@ export default async function BookDetail({
   params: Promise<{ bookId: string }>;
 }) {
   const { bookId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   const book = await prisma.book.findFirst({

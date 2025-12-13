@@ -1,9 +1,9 @@
 // src/app/page.tsx
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import Link from "next/link";
 
 export default async function Dashboard() {
-  const session = await auth();
+  const session = await getSession();
 
   return (
     <div className="space-y-4">

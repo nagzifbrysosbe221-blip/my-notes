@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -6,7 +6,7 @@ export async function PATCH(
   ctx: { params: Promise<{ subId: string }> }
 ) {
   const { subId } = await ctx.params;
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -42,7 +42,7 @@ export async function DELETE(
   ctx: { params: Promise<{ subId: string }> }
 ) {
   const { subId } = await ctx.params;
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 

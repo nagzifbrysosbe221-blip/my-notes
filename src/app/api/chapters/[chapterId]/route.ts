@@ -1,13 +1,13 @@
 // src/app/api/chapters/[chapterId]/route.ts
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 export async function PATCH(
   req: Request,
-  ctx: { params: Promise<{ chapterId: string }> } // ← params is a Promise
+  ctx: { params: Promise<{ chapterId: string }> } // <- params is a Promise
 ) {
-  const { chapterId } = await ctx.params;       // ← unwrap it
-  const session = await auth();
+  const { chapterId } = await ctx.params;       // <- unwrap it
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -31,4 +31,3 @@ export async function PATCH(
 
   return Response.json(updated);
 }
-

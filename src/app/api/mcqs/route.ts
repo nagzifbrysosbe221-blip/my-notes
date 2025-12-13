@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseConceptTypeList, normalizeConceptType } from "@/lib/concept-types";
 import type { ConceptType, Prisma } from "@prisma/client";
@@ -20,7 +20,7 @@ type CreateBody = {
 };
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 

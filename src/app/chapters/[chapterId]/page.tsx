@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import NewSubchapter from "./_new-sub";
 import SubList from "./_sub-list";
@@ -11,7 +11,7 @@ export default async function ChapterDetail({
   params: Promise<{ chapterId: string }>;
 }) {
   const { chapterId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   const chapter = await prisma.chapter.findFirst({

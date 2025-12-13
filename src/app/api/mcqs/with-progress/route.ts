@@ -1,10 +1,10 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseConceptTypeList } from "@/lib/concept-types";
 import type { Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 

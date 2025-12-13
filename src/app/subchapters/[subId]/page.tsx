@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Tabs from "./tabs";
 
@@ -11,7 +11,7 @@ export default async function SubchapterDetail({
   params: Promise<{ subId: string }>;
 }) {
   const { subId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   const sub = await prisma.subchapter.findFirst({

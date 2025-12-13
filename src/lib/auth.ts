@@ -3,6 +3,7 @@ import NextAuth from "next-auth";
 import type { Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
+import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -13,7 +14,20 @@ const CredentialsSchema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
 });
 
-const initAuth: typeof NextAuth = NextAuth;
+type NextAuthRouteHandler = (
+  request: NextRequest,
+  context: { params: Promise<{ nextauth: string[] }> }
+) => void | Response | Promise<void | Response>;
+
+const initAuth = NextAuth as unknown as (config: Record<string, unknown>) => {
+  handlers: {
+    GET?: NextAuthRouteHandler;
+    POST?: NextAuthRouteHandler;
+  };
+  auth: (...args: unknown[]) => unknown;
+  signIn: (...args: unknown[]) => Promise<unknown>;
+  signOut: (...args: unknown[]) => Promise<unknown>;
+};
 
 const authConfig = {
   /**
@@ -89,3 +103,9 @@ const authConfig = {
 };
 
 export const { handlers, auth, signIn, signOut } = initAuth(authConfig);
+
+/**
+ * Helper that returns a typed Session for server routes/components.
+ * Avoids repeating casts wherever auth() is used.
+ */
+export const getSession = async () => (await auth()) as Session | null;

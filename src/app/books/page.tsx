@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import NewBook from "./_new-book";
 
 const formatDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 export default async function BooksPage() {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   const books = await prisma.book.findMany({

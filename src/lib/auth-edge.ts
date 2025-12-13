@@ -1,6 +1,11 @@
 // src/lib/auth-edge.ts
 import NextAuth from "next-auth";
-const initAuth: typeof NextAuth = NextAuth;
+
+type MinimalNextAuthResult = {
+  auth: (...args: unknown[]) => unknown;
+};
+
+const initAuth = NextAuth as unknown as (config: Record<string, unknown>) => MinimalNextAuthResult;
 
 // Keep the middleware auth lightweight: no providers, no Prisma imports
 const edgeConfig = {
