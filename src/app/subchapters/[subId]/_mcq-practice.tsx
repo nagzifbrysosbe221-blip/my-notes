@@ -33,6 +33,10 @@ const CONCEPT_TYPES = [
   { value: "PERIPHERAL", label: "Peripheral (Supplementary)" },
   { value: "MISC", label: "Miscellaneous (Engagement)" },
 ] as const;
+const PRACTICE_MODES = ["all", "ignore_learned", "mixed"] as const;
+type PracticeMode = (typeof PRACTICE_MODES)[number];
+const SESSION_SIZE_OPTIONS = [0, 10, 20, 30] as const;
+type SessionSize = (typeof SESSION_SIZE_OPTIONS)[number];
 
 export default function MCQPractice({ subId }: { subId: string }) {
   const [loading, setLoading] = useState(true);
@@ -42,14 +46,14 @@ export default function MCQPractice({ subId }: { subId: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showCorrect, setShowCorrect] = useState(false);
   const [selectedConcepts, setSelectedConcepts] = useState<Record<string, boolean>>({});
-  const [practiceMode, setPracticeMode] = useState<"all" | "ignore_learned" | "mixed">("all");
-  const [sessionSize, setSessionSize] = useState<10 | 20 | 30 | 0>(0); // 0 = no limit (All)
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("all");
+  const [sessionSize, setSessionSize] = useState<SessionSize>(0); // 0 = no limit (All)
   const [initDone, setInitDone] = useState(false);
   const [summary, setSummary] = useState<{ total: number; learned: number; inProgress: number; new: number }>({ total: 0, learned: 0, inProgress: 0, new: 0 });
   const [elapsed, setElapsed] = useState(0); // seconds
   const [sessionCorrect, setSessionCorrect] = useState(0);
   const [sessionIncorrect, setSessionIncorrect] = useState(0);
-  const [sessionSkipped, setSessionSkipped] = useState(0);
+  const [, setSessionSkipped] = useState(0);
   const [timerInput, setTimerInput] = useState("5");
   const [countdownTotal, setCountdownTotal] = useState(0);
   const [countdownRemaining, setCountdownRemaining] = useState(0);
@@ -101,11 +105,11 @@ export default function MCQPractice({ subId }: { subId: string }) {
           CONCEPT_TYPES.forEach((c) => (all[c.value] = true));
           setSelectedConcepts(all);
         }
-        if (saved.practiceMode && ["all", "ignore_learned", "mixed"].includes(saved.practiceMode)) {
-          setPracticeMode(saved.practiceMode as any);
+        if (saved.practiceMode && (PRACTICE_MODES as readonly string[]).includes(saved.practiceMode)) {
+          setPracticeMode(saved.practiceMode as PracticeMode);
         }
-        if (typeof saved.sessionSize === "number" && [10, 20, 30, 0].includes(saved.sessionSize)) {
-          setSessionSize(saved.sessionSize as any);
+        if (typeof saved.sessionSize === "number" && (SESSION_SIZE_OPTIONS as readonly number[]).includes(saved.sessionSize)) {
+          setSessionSize(saved.sessionSize as SessionSize);
         }
       } else {
         const all: Record<string, boolean> = {};
@@ -118,7 +122,6 @@ export default function MCQPractice({ subId }: { subId: string }) {
       setSelectedConcepts(all);
     }
     setInitDone(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subId]);
 
   // Persist and auto-apply on filter changes
@@ -419,7 +422,7 @@ export default function MCQPractice({ subId }: { subId: string }) {
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-1 py-1 text-xs font-semibold text-slate-600 dark:border-zinc-700 dark:bg-zinc-900">
-            {(["all", "ignore_learned", "mixed"] as const).map((mode) => (
+            {PRACTICE_MODES.map((mode) => (
               <button
                 key={mode}
                 type="button"
@@ -437,7 +440,12 @@ export default function MCQPractice({ subId }: { subId: string }) {
             <select
               className="ml-2 rounded-2xl border border-slate-200 px-3 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               value={sessionSize}
-              onChange={(e) => setSessionSize(Number(e.target.value) as any)}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                if ((SESSION_SIZE_OPTIONS as readonly number[]).includes(next)) {
+                  setSessionSize(next as SessionSize);
+                }
+              }}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -500,12 +508,24 @@ export default function MCQPractice({ subId }: { subId: string }) {
                   const isSelected = selectedId === c.id;
                   const stateClass = showCorrect
                     ? c.isCorrect
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                      : "border-rose-400 bg-rose-50 text-rose-900"
+                      ? "border-emerald-500 bg-emerald-400/80 text-white dark:border-emerald-400 dark:bg-emerald-500/60"
+                      : isSelected
+                      ? "border-rose-500 bg-rose-400/80 text-white dark:border-rose-400 dark:bg-rose-500/60"
+                      : "border-slate-200 bg-white text-slate-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                     : isSelected
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-900"
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-900 dark:border-indigo-500/70 dark:bg-indigo-500/10 dark:text-indigo-100"
                     : "border-slate-200 bg-white text-slate-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
                   const displayedLabel = labelForIndex(idx);
+                  const statusLabel =
+                    showCorrect && (c.isCorrect || isSelected) ? (
+                      <span
+                        className={`text-xs font-semibold ${
+                          c.isCorrect ? "text-white" : "text-white"
+                        }`}
+                      >
+                        {c.isCorrect ? "Correct" : "Incorrect"}
+                      </span>
+                    ) : null;
                   return (
                     <li key={c.id}>
                       <button
@@ -516,11 +536,7 @@ export default function MCQPractice({ subId }: { subId: string }) {
                           {displayedLabel}
                         </span>
                         <span className="flex-1 text-sm">{c.text}</span>
-                        {showCorrect ? (
-                          <span className="text-xs font-semibold">
-                            {c.isCorrect ? "Correct" : isSelected ? "Incorrect" : ""}
-                          </span>
-                        ) : null}
+                        {statusLabel}
                       </button>
                       {showCorrect && c.explanation ? (
                         <div className="mt-1 rounded-2xl bg-slate-50 px-4 py-2 text-xs text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">

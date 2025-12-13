@@ -7,6 +7,7 @@ type Item = {
   conceptType: string;
   stats: { seenCount: number; correctCount: number; isLearned: boolean; lastReviewedAt: string | null; status: "LEARNED" | "NEW" | "IN_PROGRESS" };
 };
+type Status = Item["stats"]["status"];
 
 const CONCEPT_TYPES = [
   { value: "CORE", label: "Core (Foundational)" },
@@ -47,7 +48,7 @@ export default function MCQCards({ subId }: { subId: string }) {
       if (concepts) qs.set("conceptTypes", concepts);
       const r = await fetch(`/api/mcqs/with-progress?${qs}`);
       if (!r.ok) throw new Error(await r.text());
-      const data = (await r.json()) as { summary: any; items: Item[] };
+      const data = (await r.json()) as { items: Item[] };
       setItems(data.items);
     } catch (e) {
       setError((e as Error).message || "Failed to load cards");
@@ -61,7 +62,7 @@ export default function MCQCards({ subId }: { subId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subId]);
 
-  const changeStatus = async (id: string, status: "LEARNED" | "NEW" | "IN_PROGRESS") => {
+  const changeStatus = async (id: string, status: Status) => {
     try {
       const r = await fetch(`/api/mcqs/${id}`, {
         method: "PATCH",
@@ -141,7 +142,7 @@ export default function MCQCards({ subId }: { subId: string }) {
                 <select
                   className="rounded border px-2 py-1 text-sm"
                   value={it.stats.status}
-                  onChange={(e) => changeStatus(it.id, e.target.value as any)}
+                  onChange={(e) => changeStatus(it.id, e.target.value as Status)}
                 >
                   <option value="NEW">New</option>
                   <option value="IN_PROGRESS">In progress</option>
@@ -158,4 +159,3 @@ export default function MCQCards({ subId }: { subId: string }) {
     </div>
   );
 }
-

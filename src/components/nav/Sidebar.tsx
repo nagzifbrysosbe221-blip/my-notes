@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ActiveLink from "./ActiveLink";
 
 const navItems = [
@@ -101,12 +102,12 @@ export default function Sidebar() {
         <p className="text-sm text-white/80">
           Spend 10 minutes reviewing flashcards to keep your streak alive.
         </p>
-        <a
+        <Link
           href="/books"
           className="mt-4 inline-flex items-center justify-center rounded-full bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur transition hover:bg-white/30"
         >
           Jump back in &gt;
-        </a>
+        </Link>
       </div>
 
       <div className="mt-6 text-xs text-slate-400">

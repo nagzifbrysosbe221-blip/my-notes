@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseConceptTypeList } from "@/lib/concept-types";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -9,11 +11,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const subchapterId = searchParams.get("subchapterId") || undefined;
   if (!subchapterId) return new Response("subchapterId is required", { status: 400 });
-  const conceptCsv = searchParams.get("conceptTypes") || "";
-  const conceptList = conceptCsv
-    .split(",")
-    .map((s) => s.trim().toUpperCase())
-    .filter(Boolean);
+  const conceptCsv = searchParams.get("conceptTypes");
+  const conceptList = parseConceptTypeList(conceptCsv);
 
   const sub = await prisma.subchapter.findUnique({
     where: { id: subchapterId },
@@ -21,7 +20,7 @@ export async function GET(req: Request) {
   });
   if (!sub || sub.chapter.book.ownerId !== userId) return new Response("Not found", { status: 404 });
 
-  const where: any = { subchapterId };
+  const where: Prisma.CreativeQuestionWhereInput = { subchapterId };
   if (conceptList.length) where.conceptType = { in: conceptList };
 
   const items = await prisma.creativeQuestion.findMany({
@@ -32,4 +31,3 @@ export async function GET(req: Request) {
 
   return Response.json({ items });
 }
-

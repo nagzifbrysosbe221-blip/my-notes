@@ -1,7 +1,7 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
-// Loosen types to avoid CI type resolution issues
-const initAuth: any = NextAuth as any;
+import type { Session } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -13,7 +13,9 @@ const CredentialsSchema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
 });
 
-export const { handlers, auth, signIn, signOut } = initAuth({
+const initAuth: typeof NextAuth = NextAuth;
+
+const authConfig = {
   /**
    * v5 recommends trustHost in dev; make sure NEXTAUTH_URL is set in .env
    */
@@ -71,17 +73,19 @@ export const { handlers, auth, signIn, signOut } = initAuth({
    * JWT & Session callbacks: attach user id to token and session
    */
   callbacks: {
-    async jwt({ token, user }: any) {
+    async jwt({ token, user }: { token: JWT & { uid?: string }; user?: { id?: string } | null }) {
       if (user && "id" in user && typeof user.id === "string") {
         token.uid = user.id;
       }
       return token;
     },
-    async session({ session, token }: any) {
-      if (session.user && token?.uid) {
+    async session({ session, token }: { session: Session; token: JWT & { uid?: string } }) {
+      if (session.user && typeof token.uid === "string") {
         session.user.id = token.uid;
       }
       return session;
     },
   },
-});
+};
+
+export const { handlers, auth, signIn, signOut } = initAuth(authConfig);

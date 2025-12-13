@@ -8,6 +8,7 @@ type Item = {
   conceptType: string;
   stats: { seenCount: number; correctCount: number; isLearned: boolean; lastReviewedAt: string | null; status: "LEARNED" | "NEW" | "IN_PROGRESS" };
 };
+type Status = Item["stats"]["status"];
 
 const CONCEPT_TYPES = [
   { value: "CORE", label: "Core (Foundational)" },
@@ -73,7 +74,7 @@ export default function CreativeCards({ subId }: { subId: string }) {
     }
   };
 
-  const changeStatus = async (id: string, status: "LEARNED" | "NEW" | "IN_PROGRESS") => {
+  const changeStatus = async (id: string, status: Status) => {
     try {
       const r = await fetch(`/api/creatives/${id}`, {
         method: "PATCH",
@@ -146,7 +147,7 @@ export default function CreativeCards({ subId }: { subId: string }) {
                 <select
                   className="rounded border px-2 py-1 text-sm"
                   value={it.stats.status}
-                  onChange={(e) => changeStatus(it.id, e.target.value as any)}
+                  onChange={(e) => changeStatus(it.id, e.target.value as Status)}
                 >
                   <option value="NEW">New</option>
                   <option value="IN_PROGRESS">In progress</option>
@@ -163,4 +164,3 @@ export default function CreativeCards({ subId }: { subId: string }) {
     </div>
   );
 }
-

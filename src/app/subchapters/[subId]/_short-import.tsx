@@ -13,6 +13,7 @@ const CONCEPT_TYPES = [
   { value: "PERIPHERAL", label: "Peripheral (Supplementary)" },
   { value: "MISC", label: "Miscellaneous (Engagement)" },
 ] as const;
+type ConceptValue = (typeof CONCEPT_TYPES)[number]["value"];
 
 export default function ShortImport({ subId }: { subId: string }) {
   const defaultHeader = "question|answer@";
@@ -22,7 +23,7 @@ export default function ShortImport({ subId }: { subId: string }) {
   const [preview, setPreview] = useState<PreviewItem[] | null>(null);
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
-  const [conceptType, setConceptType] = useState<typeof CONCEPT_TYPES[number]["value"] | "">("CORE");
+  const [conceptType, setConceptType] = useState<ConceptValue | "">("CORE");
 
   const sample = `question|answer@What is the capital of France?|Paris`;
 
@@ -109,7 +110,7 @@ export default function ShortImport({ subId }: { subId: string }) {
         <select
           className="rounded border px-2 py-1 text-sm"
           value={conceptType}
-          onChange={(e) => setConceptType(e.target.value as any)}
+          onChange={(e) => setConceptType(e.target.value as ConceptValue | "")}
         >
           <option value="" disabled>
             Select concept category
@@ -176,4 +177,3 @@ export default function ShortImport({ subId }: { subId: string }) {
     </div>
   );
 }
-

@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseConceptTypeList, normalizeConceptType } from "@/lib/concept-types";
+import type { ConceptType, Prisma } from "@prisma/client";
 
 type CreateBody = {
   subchapterId: string;
@@ -13,7 +15,7 @@ type CreateBody = {
   >;
   correct: number; // index in choices (0-based)
   concepts?: string[] | null; // optional free-form tags
-  conceptType: "CORE" | "INTERMEDIATE" | "ADVANCED" | "PERIPHERAL" | "MISC";
+  conceptType: ConceptType;
   explanation?: string | null; // overall explanation for correct answer
 };
 
@@ -29,15 +31,19 @@ export async function POST(req: Request) {
     return new Response("Invalid JSON body", { status: 400 });
   }
 
-  const { subchapterId, stem, choices, correct, concepts, explanation, conceptType } = body || ({} as CreateBody);
+  const { subchapterId, stem, choices, correct, concepts, explanation, conceptType } = body;
   if (!subchapterId) return new Response("subchapterId is required", { status: 400 });
   if (!stem || typeof stem !== "string") return new Response("stem is required", { status: 400 });
   if (!Array.isArray(choices) || choices.length < 2)
     return new Response("choices must be an array with at least two", { status: 400 });
   if (typeof correct !== "number" || correct < 0 || correct >= choices.length)
     return new Response("correct must be a valid index into choices", { status: 400 });
-  const allowed = ["CORE", "INTERMEDIATE", "ADVANCED", "PERIPHERAL", "MISC"] as const;
-  if (!allowed.includes(conceptType as any)) return new Response("conceptType is required and must be one of CORE, INTERMEDIATE, ADVANCED, PERIPHERAL, MISC", { status: 400 });
+  const normalizedConceptType = normalizeConceptType(conceptType);
+  if (!normalizedConceptType) {
+    return new Response("conceptType is required and must be one of CORE, INTERMEDIATE, ADVANCED, PERIPHERAL, MISC", {
+      status: 400,
+    });
+  }
 
   const sub = await prisma.subchapter.findUnique({
     where: { id: subchapterId },
@@ -56,14 +62,15 @@ export async function POST(req: Request) {
     };
   });
 
+  const conceptsJson: Prisma.JsonArray | undefined = Array.isArray(concepts) ? (concepts as Prisma.JsonArray) : undefined;
+
   const created = await prisma.mCQQuestion.create({
     data: {
       subchapterId,
       prompt: stem,
       explanation: explanation ?? null,
-      conceptType: conceptType as any,
-      // @ts-ignore: optional conceptsJson field may not exist in schema older versions
-      concepts: Array.isArray(concepts) ? (concepts as unknown as any) : undefined,
+      conceptType: normalizedConceptType,
+      concepts: conceptsJson,
       choices: { create: normalized },
     },
     include: { choices: true },
@@ -81,7 +88,7 @@ export async function GET(req: Request) {
   const subchapterId = url.searchParams.get("subchapterId");
   if (!subchapterId) return new Response("subchapterId is required", { status: 400 });
   const conceptTypes = url.searchParams.get("conceptTypes");
-  const practiceMode = url.searchParams.get("practiceMode") || "all";
+  const practiceMode = (url.searchParams.get("practiceMode") as "all" | "ignore_learned" | "mixed" | null) ?? "all";
 
   const sub = await prisma.subchapter.findUnique({
     where: { id: subchapterId },
@@ -89,14 +96,9 @@ export async function GET(req: Request) {
   });
   if (!sub || sub.chapter.book.ownerId !== userId) return new Response("Not found", { status: 404 });
 
-  const where: any = { subchapterId };
-  if (conceptTypes) {
-    const list = conceptTypes
-      .split(",")
-      .map((s) => s.trim().toUpperCase())
-      .filter((s) => ["CORE", "INTERMEDIATE", "ADVANCED", "PERIPHERAL", "MISC"].includes(s));
-    if (list.length > 0) where.conceptType = { in: list };
-  }
+  const where: Prisma.MCQQuestionWhereInput = { subchapterId };
+  const list = parseConceptTypeList(conceptTypes);
+  if (list.length > 0) where.conceptType = { in: list };
 
   const items = await prisma.mCQQuestion.findMany({
     where,

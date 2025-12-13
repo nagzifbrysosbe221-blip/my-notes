@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeConceptType } from "@/lib/concept-types";
+import type { ConceptType, Prisma } from "@prisma/client";
 
 function parseCSV(input: string): string[][] {
   // Parse with '|' and '@' when present; otherwise fallback to comma/newline.
@@ -120,14 +122,22 @@ function parseCsvToItems(csv: string): ParsedItem[] {
   return items;
 }
 
+type ImportBody = {
+  subchapterId?: string;
+  csv?: string;
+  mode?: "preview" | "commit";
+  indices?: number[];
+  conceptType?: ConceptType;
+};
+
 export async function POST(req: Request) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  let body: { subchapterId?: string; csv?: string; mode?: "preview" | "commit"; indices?: number[]; conceptType?: string };
+  let body: ImportBody;
   try {
-    body = (await req.json()) as any;
+    body = (await req.json()) as ImportBody;
   } catch {
     return new Response("Invalid JSON body", { status: 400 });
   }
@@ -135,8 +145,8 @@ export async function POST(req: Request) {
   const { subchapterId, csv, mode = "preview", indices, conceptType } = body || {};
   if (!subchapterId) return new Response("subchapterId is required", { status: 400 });
   if (!csv || typeof csv !== "string") return new Response("csv is required", { status: 400 });
-  const allowed = ["CORE", "INTERMEDIATE", "ADVANCED", "PERIPHERAL", "MISC"] as const;
-  if (!conceptType || !allowed.includes(conceptType.toUpperCase() as any)) {
+  const normalizedConceptType = normalizeConceptType(conceptType);
+  if (!normalizedConceptType) {
     return new Response("conceptType is required and must be one of CORE, INTERMEDIATE, ADVANCED, PERIPHERAL, MISC", { status: 400 });
   }
 
@@ -182,9 +192,8 @@ export async function POST(req: Request) {
             subchapterId,
             prompt: i.stem,
             explanation: i.explanation || null,
-            conceptType: conceptType.toUpperCase() as any,
-            // @ts-ignore: optional concepts JSON field
-            concepts: i.concepts && i.concepts.length ? (i.concepts as any) : undefined,
+            conceptType: normalizedConceptType,
+            concepts: i.concepts && i.concepts.length ? (i.concepts as Prisma.JsonArray) : undefined,
             choices: {
               create: i.choices.map((c, idx) => ({
                 label: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[idx] ?? String(idx + 1),

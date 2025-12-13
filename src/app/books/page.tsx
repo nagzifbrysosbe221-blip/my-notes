@@ -7,7 +7,7 @@ const formatDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "nume
 
 export default async function BooksPage() {
   const session = await auth();
-  const userId = (session as any)?.userId;
+  const userId = session?.user?.id;
 
   const books = await prisma.book.findMany({
     where: userId ? { ownerId: userId } : undefined,
@@ -52,7 +52,7 @@ export default async function BooksPage() {
 
       {books.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900/60">
-          <p className="text-lg font-semibold">Let's create your first book</p>
+          <p className="text-lg font-semibold">Let{"'"}s create your first book</p>
           <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400">
             Books keep related chapters together. Use them for subjects, exams, or big projects.
           </p>

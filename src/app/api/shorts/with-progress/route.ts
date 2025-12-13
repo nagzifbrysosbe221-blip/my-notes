@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseConceptTypeList } from "@/lib/concept-types";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -17,14 +19,9 @@ export async function GET(req: Request) {
   });
   if (!sub || sub.chapter.book.ownerId !== userId) return new Response("Not found", { status: 404 });
 
-  const where: any = { subchapterId };
-  if (conceptTypes) {
-    const list = conceptTypes
-      .split(",")
-      .map((s) => s.trim().toUpperCase())
-      .filter((s) => ["CORE", "INTERMEDIATE", "ADVANCED", "PERIPHERAL", "MISC"].includes(s));
-    if (list.length > 0) where.conceptType = { in: list };
-  }
+  const where: Prisma.ShortQuestionWhereInput = { subchapterId };
+  const list = parseConceptTypeList(conceptTypes);
+  if (list.length > 0) where.conceptType = { in: list };
 
   const items = await prisma.shortQuestion.findMany({
     where,
@@ -65,4 +62,3 @@ export async function GET(req: Request) {
 
   return Response.json({ summary, items: mapped });
 }
-

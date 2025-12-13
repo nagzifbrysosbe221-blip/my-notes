@@ -7,11 +7,10 @@ export async function GET() {
       status: 200,
       headers: { "content-type": "application/json" },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return new Response(
-      JSON.stringify({ ok: false, error: err?.message ?? String(err) }),
+      JSON.stringify({ ok: false, error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { "content-type": "application/json" } }
     );
   }
 }
-

@@ -37,7 +37,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   let body: { status?: "LEARNED" | "NEW" | "IN_PROGRESS" };
   try {
-    body = (await req.json()) as any;
+    body = (await req.json()) as { status?: "LEARNED" | "NEW" | "IN_PROGRESS" };
   } catch {
     return new Response("Invalid JSON body", { status: 400 });
   }
@@ -67,4 +67,3 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   return Response.json({ ok: true });
 }
-

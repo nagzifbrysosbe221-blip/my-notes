@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
   let body: { chapterId?: string; order?: string[] };
   try {
-    body = (await req.json()) as any;
+    body = (await req.json()) as { chapterId?: string; order?: string[] };
   } catch {
     return new Response("Invalid JSON body", { status: 400 });
   }
@@ -33,4 +33,3 @@ export async function POST(req: Request) {
 
   return Response.json({ ok: true });
 }
-

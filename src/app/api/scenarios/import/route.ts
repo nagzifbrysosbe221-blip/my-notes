@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeConceptType } from "@/lib/concept-types";
+import type { ConceptType } from "@prisma/client";
 
 function parseCSV(input: string): string[][] {
   const useCustom = input.includes("|") || input.includes("@");
@@ -51,14 +53,22 @@ function parseCsvToItems(csv: string): ParsedItem[] {
   return items;
 }
 
+type ImportBody = {
+  subchapterId?: string;
+  csv?: string;
+  mode?: "preview" | "commit";
+  indices?: number[];
+  conceptType?: ConceptType;
+};
+
 export async function POST(req: Request) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  let body: { subchapterId?: string; csv?: string; mode?: "preview" | "commit"; indices?: number[]; conceptType?: string };
+  let body: ImportBody;
   try {
-    body = (await req.json()) as any;
+    body = (await req.json()) as ImportBody;
   } catch {
     return new Response("Invalid JSON body", { status: 400 });
   }
@@ -66,8 +76,8 @@ export async function POST(req: Request) {
   const { subchapterId, csv, mode = "preview", indices, conceptType } = body || {};
   if (!subchapterId) return new Response("subchapterId is required", { status: 400 });
   if (!csv || typeof csv !== "string") return new Response("csv is required", { status: 400 });
-  const allowed = ["CORE", "INTERMEDIATE", "ADVANCED", "PERIPHERAL", "MISC"] as const;
-  if (!conceptType || !allowed.includes(conceptType.toUpperCase() as any)) {
+  const normalizedConceptType = normalizeConceptType(conceptType);
+  if (!normalizedConceptType) {
     return new Response("conceptType is required and must be one of CORE, INTERMEDIATE, ADVANCED, PERIPHERAL, MISC", { status: 400 });
   }
 
@@ -92,14 +102,6 @@ export async function POST(req: Request) {
       .filter((x): x is ParsedItem => !!x);
     if (toCreate.length === 0) return new Response("No valid indices to import", { status: 400 });
 
-    const anyPrisma = prisma as any;
-    if (!anyPrisma.scenarioQuestion || typeof anyPrisma.scenarioQuestion.create !== "function") {
-      return new Response(
-        "ScenarioQuestion model not found in Prisma client. Run `npx prisma generate` and `npx prisma db push`, then restart the dev server.",
-        { status: 500 }
-      );
-    }
-
     const created = await prisma.$transaction(
       toCreate.map((i) =>
         prisma.scenarioQuestion.create({
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
             subchapterId,
             prompt: i.question,
             answer: i.answer,
-            conceptType: conceptType.toUpperCase() as any,
+            conceptType: normalizedConceptType,
           },
         })
       )
@@ -118,4 +120,3 @@ export async function POST(req: Request) {
     return new Response((e as Error).message || "Invalid CSV", { status: 400 });
   }
 }
-

@@ -78,7 +78,7 @@ export default function NewChapter({ bookId, variant = "panel" }: NewChapterProp
         </button>
       </div>
       <p className="mt-3 text-xs text-slate-500 dark:text-zinc-400">
-        Tip: keep names action-oriented ("Master cell division") to stay motivated.
+        Tip: keep names action-oriented (&ldquo;Master cell division&rdquo;) to stay motivated.
       </p>
     </div>
   );

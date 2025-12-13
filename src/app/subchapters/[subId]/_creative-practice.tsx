@@ -1,8 +1,11 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Item = { id: string; prompt: string; answer: string; conceptType: string };
 type Summary = { total: number; learned: number; inProgress: number; new: number };
+type ItemWithStats = Item & {
+  stats: { seenCount: number; correctCount: number; isLearned: boolean; lastReviewedAt: string | null; status: "LEARNED" | "NEW" | "IN_PROGRESS" };
+};
 
 const CONCEPT_TYPES = [
   { value: "CORE", label: "Core (Foundational)" },
@@ -29,7 +32,7 @@ export default function CreativePractice({ subId }: { subId: string }) {
     return items.find((x) => x.id === id) || null;
   }, [queue, index, items]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -41,7 +44,7 @@ export default function CreativePractice({ subId }: { subId: string }) {
       if (concepts) qs.set("conceptTypes", concepts);
       const r = await fetch(`/api/creatives/with-progress?${qs}`);
       if (!r.ok) throw new Error(await r.text());
-      const data = (await r.json()) as { summary: Summary; items: (Item & { stats: any })[] };
+      const data = (await r.json()) as { summary: Summary; items: ItemWithStats[] };
       setSummary(data.summary || { total: 0, learned: 0, inProgress: 0, new: 0 });
       const base = data.items.map(({ id, prompt, answer, conceptType }) => ({ id, prompt, answer, conceptType }));
       setItems(base);
@@ -54,26 +57,56 @@ export default function CreativePractice({ subId }: { subId: string }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [conceptFilters, shuffle, subId]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subId]);
+    void load();
+  }, [load]);
 
-  const next = (again = false) => {
-    setRevealed(false);
-    setIndex((i) => {
-      const curId = queue[i];
-      if (again) {
-        setQueue((q) => [...q.slice(0, i), ...q.slice(i + 1), curId]);
-        return i;
+  const next = useCallback(
+    (again = false) => {
+      setRevealed(false);
+      setIndex((i) => {
+        const curId = queue[i];
+        if (again) {
+          setQueue((q) => [...q.slice(0, i), ...q.slice(i + 1), curId]);
+          return i;
+        }
+        const ni = i + 1;
+        if (ni >= queue.length) return 0;
+        return ni;
+      });
+    },
+    [queue]
+  );
+
+  const record = useCallback(
+    async (correct: boolean) => {
+      const cur = current;
+      if (!cur) return;
+      try {
+        await fetch("/api/creatives/practice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionId: cur.id, correct }),
+        });
+        const concepts = Object.entries(conceptFilters)
+          .filter(([, v]) => v)
+          .map(([k]) => k)
+          .join(",");
+        const qs = new URLSearchParams({ subchapterId: subId });
+        if (concepts) qs.set("conceptTypes", concepts);
+        const r2 = await fetch(`/api/creatives/with-progress?${qs}`);
+        if (r2.ok) {
+          const data2 = (await r2.json()) as { summary: Summary };
+          setSummary(data2.summary || { total: 0, learned: 0, inProgress: 0, new: 0 });
+        }
+      } catch {
+        // ignore
       }
-      const ni = i + 1;
-      if (ni >= queue.length) return 0;
-      return ni;
-    });
-  };
+    },
+    [conceptFilters, current, subId]
+  );
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -86,20 +119,20 @@ export default function CreativePractice({ subId }: { subId: string }) {
       } else if (key === "a") {
         if (revealed) {
           e.preventDefault();
-          record(false);
+          void record(false);
           next(true);
         }
       } else if (key === "n" || key === "enter") {
         if (revealed) {
           e.preventDefault();
-          record(true);
+          void record(true);
           next(false);
         }
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [revealed, next]);
+  }, [next, record, revealed]);
 
   function shuffleArray<T>(arr: T[]): T[] {
     const a = arr.slice();
@@ -108,31 +141,6 @@ export default function CreativePractice({ subId }: { subId: string }) {
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-  }
-
-  async function record(correct: boolean) {
-    const cur = current;
-    if (!cur) return;
-    try {
-      await fetch("/api/creatives/practice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionId: cur.id, correct }),
-      });
-      const concepts = Object.entries(conceptFilters)
-        .filter(([, v]) => v)
-        .map(([k]) => k)
-        .join(",");
-      const qs = new URLSearchParams({ subchapterId: subId });
-      if (concepts) qs.set("conceptTypes", concepts);
-      const r2 = await fetch(`/api/creatives/with-progress?${qs}`);
-      if (r2.ok) {
-        const data2 = (await r2.json()) as { summary: Summary };
-        setSummary(data2.summary || { total: 0, learned: 0, inProgress: 0, new: 0 });
-      }
-    } catch {
-      // ignore
-    }
   }
 
   return (
@@ -162,14 +170,14 @@ export default function CreativePractice({ subId }: { subId: string }) {
             <input type="checkbox" checked={shuffle} onChange={(e) => setShuffle(e.target.checked)} />
             Shuffle
           </label>
-          <button className="rounded border px-2 py-1" onClick={load} disabled={loading}>
-            {loading ? "Refreshing…" : "Refresh"}
+          <button className="rounded border px-2 py-1" onClick={() => void load()} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-sm text-zinc-500">Loading…</div>
+        <div className="text-sm text-zinc-500">Loading...</div>
       ) : error ? (
         <div className="text-sm text-red-600">{error}</div>
       ) : items.length === 0 ? (
@@ -202,21 +210,27 @@ export default function CreativePractice({ subId }: { subId: string }) {
                 <button
                   className="rounded border px-3 py-1 text-sm"
                   title="Shortcut: A"
-                  onClick={() => { record(false); next(true); }}
+                  onClick={() => {
+                    void record(false);
+                    next(true);
+                  }}
                 >
                   Again
                 </button>
                 <button
                   className="rounded border px-3 py-1 text-sm"
                   title="Shortcut: N or Enter"
-                  onClick={() => { record(true); next(false); }}
+                  onClick={() => {
+                    void record(true);
+                    next(false);
+                  }}
                 >
                   I got it
                 </button>
               </>
             )}
           </div>
-          <div className="text-xs text-zinc-500">Shortcuts: R/Space reveal • A again • N/Enter got it</div>
+          <div className="text-xs text-zinc-500">Shortcuts: R/Space reveal - A again - N/Enter got it</div>
           <div className="text-xs text-zinc-600">
             {index + 1} / {queue.length}
           </div>
@@ -225,4 +239,3 @@ export default function CreativePractice({ subId }: { subId: string }) {
     </div>
   );
 }
-

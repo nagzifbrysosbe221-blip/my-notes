@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Item = {
   id: string;
@@ -8,6 +8,7 @@ type Item = {
   conceptType: string;
   stats: { seenCount: number; correctCount: number; isLearned: boolean; lastReviewedAt: string | null; status: "LEARNED" | "NEW" | "IN_PROGRESS" };
 };
+type Status = Item["stats"]["status"];
 
 const CONCEPT_TYPES = [
   { value: "CORE", label: "Core (Foundational)" },
@@ -36,7 +37,7 @@ export default function ScenarioCards({ subId }: { subId: string }) {
     );
   }, [items]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -55,36 +56,42 @@ export default function ScenarioCards({ subId }: { subId: string }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [conceptFilters, subId]);
 
   useEffect(() => {
-    load();
-  }, [subId]);
+    void load();
+  }, [load]);
 
-  const del = async (id: string) => {
-    if (!confirm("Delete this card? This cannot be undone.")) return;
-    try {
-      const r = await fetch(`/api/scenarios/${id}`, { method: "DELETE" });
-      if (!r.ok && r.status !== 204) throw new Error(await r.text());
-      await load();
-    } catch (e) {
-      alert((e as Error).message || "Failed to delete");
-    }
-  };
+  const del = useCallback(
+    async (id: string) => {
+      if (!confirm("Delete this card? This cannot be undone.")) return;
+      try {
+        const r = await fetch(`/api/scenarios/${id}`, { method: "DELETE" });
+        if (!r.ok && r.status !== 204) throw new Error(await r.text());
+        await load();
+      } catch (e) {
+        alert((e as Error).message || "Failed to delete");
+      }
+    },
+    [load]
+  );
 
-  const changeStatus = async (id: string, status: "LEARNED" | "NEW" | "IN_PROGRESS") => {
-    try {
-      const r = await fetch(`/api/scenarios/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!r.ok) throw new Error(await r.text());
-      await load();
-    } catch (e) {
-      alert((e as Error).message || "Failed to update status");
-    }
-  };
+  const changeStatus = useCallback(
+    async (id: string, status: Status) => {
+      try {
+        const r = await fetch(`/api/scenarios/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        await load();
+      } catch (e) {
+        alert((e as Error).message || "Failed to update status");
+      }
+    },
+    [load]
+  );
 
   return (
     <div className="space-y-4">
@@ -108,14 +115,14 @@ export default function ScenarioCards({ subId }: { subId: string }) {
               {c.label}
             </label>
           ))}
-          <button className="rounded border px-2 py-1" onClick={load}>
+          <button className="rounded border px-2 py-1" onClick={() => void load()}>
             Refresh
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-sm text-zinc-500">Loading…</div>
+        <div className="text-sm text-zinc-500">Loading...</div>
       ) : error ? (
         <div className="text-sm text-red-600">{error}</div>
       ) : items.length === 0 ? (
@@ -145,7 +152,7 @@ export default function ScenarioCards({ subId }: { subId: string }) {
                 <select
                   className="rounded border px-2 py-1 text-sm"
                   value={it.stats.status}
-                  onChange={(e) => changeStatus(it.id, e.target.value as any)}
+                  onChange={(e) => changeStatus(it.id, e.target.value as Status)}
                 >
                   <option value="NEW">New</option>
                   <option value="IN_PROGRESS">In progress</option>
@@ -162,4 +169,3 @@ export default function ScenarioCards({ subId }: { subId: string }) {
     </div>
   );
 }
-

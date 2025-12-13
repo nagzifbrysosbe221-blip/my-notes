@@ -17,6 +17,7 @@ const CONCEPT_TYPES = [
   { value: "PERIPHERAL", label: "Peripheral (Supplementary)" },
   { value: "MISC", label: "Miscellaneous (Engagement)" },
 ] as const;
+type ConceptValue = (typeof CONCEPT_TYPES)[number]["value"];
 
 export default function MCQImport({ subId }: { subId: string }) {
   const defaultHeader = "stem|choiceA|expA|choiceB|expB|choiceC|expC|choiceD|expD|correct|explanation@";
@@ -26,7 +27,7 @@ export default function MCQImport({ subId }: { subId: string }) {
   const [preview, setPreview] = useState<PreviewItem[] | null>(null);
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
-  const [conceptType, setConceptType] = useState<typeof CONCEPT_TYPES[number]["value"] | "">("CORE");
+  const [conceptType, setConceptType] = useState<ConceptValue | "">("CORE");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const sample = `stem|choiceA|expA|choiceB|expB|choiceC|expC|choiceD|expD|correct|explanation@What is 2+2?|3||4|Two plus two is four|5||22||B|Basic arithmetic.`;
@@ -114,11 +115,11 @@ export default function MCQImport({ subId }: { subId: string }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="text-sm">Concept:</label>
-        <select
-          className="rounded border px-2 py-1 text-sm"
-          value={conceptType}
-          onChange={(e) => setConceptType(e.target.value as any)}
-        >
+            <select
+              className="rounded border px-2 py-1 text-sm"
+              value={conceptType}
+              onChange={(e) => setConceptType(e.target.value as ConceptValue | "")}
+            >
           <option value="" disabled>
             Select concept category
           </option>
@@ -130,11 +131,11 @@ export default function MCQImport({ subId }: { subId: string }) {
         </select>
         <div className="ml-auto flex items-center gap-2">
           <label className="text-sm">View:</label>
-          <select
-            className="rounded border px-2 py-1 text-sm"
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value as any)}
-          >
+            <select
+              className="rounded border px-2 py-1 text-sm"
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as "cards" | "table")}
+            >
             <option value="cards">Cards</option>
             <option value="table">Table</option>
           </select>
